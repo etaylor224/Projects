@@ -9,9 +9,9 @@ def gather_stats():
     cpu = psutil.cpu_percent(1)
     mem = psutil.virtual_memory()[2]
     sys_os = platform.system()
-    pg_instert(hostname, cpu, mem, sys_os)
+    pg_insert(hostname, cpu, mem, sys_os)
 
-def pg_instert(hostname, cpu, mem, sys_os):
+def pg_insert(hostname, cpu, mem, sys_os):
     
     query = """INSERT INTO table(
         hostname,
