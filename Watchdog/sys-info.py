@@ -1,6 +1,7 @@
 import platform
 import datetime
 import psycopg
+import psutil
 from watcher_conf import dev_db
 
 def gather_stats():
