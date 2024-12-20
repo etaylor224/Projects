@@ -1,0 +1,23 @@
+namespace c_calc
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Enter the first number: ");
+            
+            int firstNum = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Enter the second number: ");
+
+            int secNum = int.Parse(Console.ReadLine());
+
+            int sum = firstNum + secNum;
+
+            Console.WriteLine($"The sum of {firstNum} and {secNum} is: {sum}");
+
+            Console.ReadKey();
+
+        }
+    }
+}
