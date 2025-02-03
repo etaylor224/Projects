@@ -1,0 +1,45 @@
+import sqlite3
+import os
+
+db = "budget.db"
+db_exists = os.path.isfile("budget.db")
+conn = sqlite3.connect(db)
+cursor = conn.cursor()
+
+def db_create():
+
+    bills_table = """
+    CREATE TABLE Bills (
+    Name CHAR(50) NOT NULL,
+    Category TEXT NOT NULL,
+    Amount INT NOT NULL, 
+    DueDate TEXT,
+    PaidDate TEXT,
+    IsPaid INT, NOT NULL
+    IsRecurring INT,
+    RecurringFreq TEXT,
+    NextDue TEXT  
+    );  
+    """
+
+    income_table = """
+    CREATE TABLE Income (
+    Name TEXT NOT NULL,
+    Amount INT NOT NULL,
+    Date TEXT,
+    IsRecurring INT,
+    RecurringFreq TEXT
+    );    
+    """
+    cursor.execute(bills_table)
+    cursor.execute(income_table)
+    print("Tables & Database created")
+
+def read_tables(query):
+    cursor.execute(query)
+
+def write_table(table, data):
+    columns = ", ".join(data.keys())
+    data = ", ".join(data.values())
+
+    cursor.executemany(f"INSERT INTO {table} {columns}, VALUES(x)", __seq_of_parameters=data)
