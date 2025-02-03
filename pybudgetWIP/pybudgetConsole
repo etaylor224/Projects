@@ -1,0 +1,74 @@
+import sqlite3
+
+import budget_db
+from budget_db import read_tables, write_table
+
+row = input("Would you like to:\n1) Add an entry \n2)View your current entries\nEnter 1 or 2: ")
+
+def read_entries():
+    user_select = input("Would you like to view by:"
+                        "\n1) Category"
+                        "\n2) Date Range"
+                        "\n3) Due Date"
+                        "\n4) All\n")
+    if user_select == "1":
+
+        query = "SELECT Categories from Bills"
+        avail_cats = budget_db.read_tables(query)
+
+
+    elif user_select == "2":
+        pass
+    elif user_select == "3":
+        pass
+    else:
+        pass
+
+
+
+def add_entries():
+    data = input("What is being added:"
+                 "\n1) Expense"
+                 "\n2) Payment\n")
+
+    if data == "1":
+        get_bills_data()
+    else:
+        pass
+
+def get_bills_data():
+
+    bill_name = input("Enter the bills name: ")
+    bill_amount = input("Enter the amount: ")
+    category = input("What category would this fall under?: ")
+    due_date = input("Enter when due,if none leave blank format[MM/DD/YYYY]: ")
+    is_paid = input("If it has been paid enter 'Paid' if unpaid leave blank: ")
+
+    if is_paid != "":
+        paid_date = input("When was this paid? MM/DD/YYYY: ")
+    else:
+        paid_date = ""
+
+    is_recurring = input("Is this a recurring bill? Y/N: ").strip()
+
+    if "." in bill_amount:
+        float(bill_amount)
+    else:
+        int(bill_amount)
+
+    insert_data = {
+        "Name": bill_name,
+        "Category": category,
+        "Amount": bill_amount,
+        "DueDate": due_date,
+        "IsPaid": is_paid,
+        "PaidDate": paid_date,
+        "IsRecurring": is_recurring,
+    }
+# TODO Build recurring logic to populate the NextDue column
+    if is_recurring.lower() == "y":
+        recurring_freq = input("How often does this recur? Daily, weekly, monthly, etc: ")
+        insert_data["RecurringFreq"] = recurring_freq
+
+    insert = budget_db.write_table("Bills", insert_data)
+    return insert
