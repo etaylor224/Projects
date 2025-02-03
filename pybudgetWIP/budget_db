@@ -6,8 +6,8 @@ db_exists = os.path.isfile("budget.db")
 conn = sqlite3.connect(db)
 cursor = conn.cursor()
 
-def db_create():
 
+def db_create():
     bills_table = """
     CREATE TABLE Bills (
     Name CHAR(50) NOT NULL,
@@ -15,7 +15,7 @@ def db_create():
     Amount INT NOT NULL, 
     DueDate TEXT,
     PaidDate TEXT,
-    IsPaid INT, NOT NULL
+    IsPaid INT NOT NULL,
     IsRecurring INT,
     RecurringFreq TEXT,
     NextDue TEXT  
@@ -35,11 +35,22 @@ def db_create():
     cursor.execute(income_table)
     print("Tables & Database created")
 
+
 def read_tables(query):
     cursor.execute(query)
 
+
 def write_table(table, data):
     columns = ", ".join(data.keys())
-    data = ", ".join(data.values())
-
-    cursor.executemany(f"INSERT INTO {table} {columns}, VALUES(x)", __seq_of_parameters=data)
+    value = ", ".join(data.values())
+    values_len = ", ".join(list("?" * len(data.values())))
+    query = f"""
+    INSERT INTO {table}
+    ({columns})
+    VALUES ({values_len})    
+    """
+    try:
+        cursor.execute(query, value)
+        print("Added data to Database")
+    except Exception as e:
+        print(f"Error: {e}")
