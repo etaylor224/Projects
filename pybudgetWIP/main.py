@@ -7,7 +7,7 @@ def main():
     if not db_exists:
         db_create()
 
-    row = pybudgetConsole.row
+    row = pybudgetConsole.read_or_write()
     if row == "1":
         pybudgetConsole.add_entries()
     else:
