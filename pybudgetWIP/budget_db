@@ -38,6 +38,7 @@ def db_create():
 
 def read_tables(query):
     cursor.execute(query)
+    return cursor.fetchall()
 
 
 def write_table(table, data):
