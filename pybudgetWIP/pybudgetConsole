@@ -12,11 +12,8 @@ def read_entries():
                         "\n3) Due Date"
                         "\n4) All\n")
     if user_select == "1":
-
-        query = "SELECT Categories from Bills"
-        avail_cats = budget_db.read_tables(query)
-
-
+        get_categories()
+       
     elif user_select == "2":
         pass
     elif user_select == "3":
@@ -24,7 +21,18 @@ def read_entries():
     else:
         pass
 
+def get_categories():
 
+    query = "SELECT Category from Bills"
+    avail_cats = budget_db.read_tables(query)
+    cat_num = 1
+    print("Available Categories are: ")
+    for cat in avail_cats:
+        print(f"{cat_num}) {cat[0]}")
+        cat_num += 1
+    cat_choice = input("Please choose from the above categories [ex. Groceries]: ")
+    if cat_choice in avail_cats:
+        print("choice correct")
 
 def add_entries():
     data = input("What is being added:"
