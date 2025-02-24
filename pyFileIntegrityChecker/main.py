@@ -4,7 +4,7 @@ from tkinter import filedialog
 from hashlib import sha256
 
 
-def does_hash_file_exist():
+def does_hash_file_exist() -> bool:
     path_exists = False
     if os.path.exists(f"{os.getcwd()}/hashes.json"):
         path_exists = True
