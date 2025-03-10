@@ -1,0 +1,37 @@
+import datetime
+import logging
+import socketserver
+import logging as logger
+
+host = "0.0.0.0"
+port = 514
+
+
+class SyslogUDPHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        data = bytes.decode(self.request[0].strip())
+        socket = self.request[1]
+        print(f"{self.client_address[0]} : {str(data)}")
+        logger.info(f"{self.client_address[0]} | {str(data)}")
+
+
+def initialize_logger():
+
+    log_format = '%(asctime)s | %(levelname)s | %(message)s'
+    date_frmt = '%Y-%m-%d %H-%M-%S'
+    date =datetime.date.today().strftime("%Y-%m-%d")
+
+    logger.basicConfig(level=logging.INFO, format=log_format, datefmt=date_frmt, filename=f"syslog_{date}.log",
+                       filemode='a')
+
+if __name__ == "__main__":
+    try:
+        print(f"Initializing Syslogger on {host}:{port}")
+        initialize_logger()
+        server = socketserver.UDPServer((host,port), SyslogUDPHandler)
+        server.serve_forever(poll_interval=0.5)
+
+    except (IOError, SystemExit):
+        raise
+    except KeyboardInterrupt:
+        print("Manual Shutdown ENGAGED!")
