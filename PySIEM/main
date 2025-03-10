@@ -1,0 +1,34 @@
+import pandas as pd
+from datetime import datetime
+import asyncpg
+import asyncio
+from conf import db_url
+
+
+async def insert_log_data(date, level, log_mess, sys_ip=None, dns=None):
+    conn = await asyncpg.connect(db_url)
+
+    query = '''
+    INSERT INTO syslogdatatable
+    VALUES($1,$2,$3,$4,$5)    
+    '''
+
+    await conn.execute(query, date, level, sys_ip, dns, log_mess)
+    await conn.close()
+
+def date_normalize(date_raw):
+    if " " in date_raw:
+        date_split = date_raw.splot(" ")[0]
+        return datetime.strptime(date_split, "%Y-%m-%d").date()
+    else:
+        return datetime.strptime(date_raw, "%Y-%m-%d").date()
+
+with open('syslog_2025-03-10.log', 'r') as l:
+    for line in l.readlines():
+        data = line.split("|")
+        date_normal = date_normalize(data[0])
+
+        logs = "".join(data[3:])
+        system = data[2]
+
+        asyncio.run(insert_log_data(date_normal, level=data[1], sys_ip=system, log_mess=logs))
