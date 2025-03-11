@@ -1,34 +1,55 @@
-import pandas as pd
-from datetime import datetime
 import asyncpg
 import asyncio
+from datetime import datetime, timedelta
 from conf import db_url
+from hashlib import sha256
 
-
-async def insert_log_data(date, level, log_mess, sys_ip=None, dns=None):
+async def insert_log_data(date, level, log_mess, val, sys_ip=None, dns=None):
     conn = await asyncpg.connect(db_url)
 
     query = '''
-    INSERT INTO syslogdatatable
-    VALUES($1,$2,$3,$4,$5)    
+    INSERT INTO syslogdata
+    VALUES($1,$2,$3,$4,$5,$6)    
     '''
 
-    await conn.execute(query, date, level, sys_ip, dns, log_mess)
+    await conn.execute(query, date, level, sys_ip, dns, log_mess, val)
     await conn.close()
+
+async def insert_log_w_pool(pool, date, level, log_mess, val, sys_ip=None, dns=None):
+    async with pool.acquire() as conn:
+
+        query = '''
+        INSERT INTO syslogdata
+        VALUES($1,$2,$3,$4,$5,$6)   
+        '''
+        await conn.execute(query, date, level, sys_ip, dns, log_mess, val)
+        return
 
 def date_normalize(date_raw):
     if " " in date_raw:
-        date_split = date_raw.splot(" ")[0]
+        date_split = date_raw.split(" ")[0]
         return datetime.strptime(date_split, "%Y-%m-%d").date()
     else:
         return datetime.strptime(date_raw, "%Y-%m-%d").date()
 
-with open('syslog_2025-03-10.log', 'r') as l:
-    for line in l.readlines():
-        data = line.split("|")
-        date_normal = date_normalize(data[0])
+def get_unique_hash(line):
+    hasher = sha256()
+    hasher.update(line.encode("utf-8"))
+    return hasher.hexdigest()
 
-        logs = "".join(data[3:])
-        system = data[2]
+async def main():
+    today = datetime.today().date().strftime("%Y-%m-%d")
+    yesterday = (datetime.today().date() - timedelta(days=1)).strftime("%Y-%m-%d")
+    file = f"syslog_{today}.log"
+    pool = await asyncpg.create_pool(db_url, min_size=5, max_size=5)
 
-        asyncio.run(insert_log_data(date_normal, level=data[1], sys_ip=system, log_mess=logs))
+    with open(file, 'r') as l:
+        for line in l.readlines():
+            data = line.split("|")
+            date_normal = date_normalize(data[0])
+            logs = "".join(data[3:])
+            system = data[2]
+            unique_hash = get_unique_hash(line)
+            await insert_log_w_pool(pool, date_normal, level=data[1], sys_ip=system, log_mess=logs, val=unique_hash)
+
+asyncio.run(main())
