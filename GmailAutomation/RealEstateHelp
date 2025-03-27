@@ -7,7 +7,9 @@ def google_auth(SCOPES):
         creds = Credentials.from_authorized_user_file("token.json", SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
+
         if creds and creds.expired and creds.refresh_token:
+            
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
@@ -19,21 +21,22 @@ def google_auth(SCOPES):
             token.write(creds.to_json())
     return creds
 
-def create_google_cal_event(data: dict):
+def create_google_cal_event(data:dict, address:str, name:str, agent_email:str):
 
     scope = ['https://www.googleapis.com/auth/calendar']
     creds = google_auth(scope)
 
     for key in data:
         date = datetime.strptime(data[key][0], "%m/%d/%Y").strftime("%Y-%m-%d")
+
         if len(data[key]) > 1 and data[key][1] != None:
             dt = "T".join(data[key])
             dt_formatted = datetime.strptime(dt, "%m/%d/%YT%I:%M%p").strftime("%Y-%m-%dT%H:%M")
 
             end_time = (datetime.strptime(dt_formatted, "%Y-%m-%dT%H:%M") + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M")
             event = {
-                "summary": key,
-                "description": "",
+                "summary": f"{name} - {key}",
+                "description": address,
                 "start":
                     {
                         #"dateTime": '2025-03-26T05:00:00-07:00',
@@ -44,21 +47,25 @@ def create_google_cal_event(data: dict):
                     "dateTime": f"{end_time}:00-05:00",
                     "timeZone": "America/Chicago"
                     },
+                'attendees': [
+                    {'email': agent_email},
+                ],
             }
         else:
             event = {
-                "summary": key,
-                "description": "",
+                "summary": "{} - {}".format(name, key),
+                "description": address,
                 "start":
                     {
                         #"dateTime": '2025-03-26T05:00:00-07:00',
-                        "dateTime": f"{date}T08:00:00-05:00",
-                        "timeZone": "America/Chicago"
+                        "date": f"{date}"
                     },
                 "end": {
-                    "dateTime": f"{date}T08:30:00-05:00",
-                    "timeZone": "America/Chicago"
+                    "date": f"{date}"
                     },
+                'attendees': [
+                    {'email': agent_email},
+                ],
             }
 
         service = build("calendar", "v3", credentials=creds)
@@ -82,8 +89,6 @@ def time_grabber(data:str):
 
 def date_helper(info:str):
 
-    data_dict = dict()
-
     date = date_grabber(info)
     action = info.split("|")[0]
     if "@" in info:
@@ -94,7 +99,7 @@ def date_helper(info:str):
 
 def main():
 
-    name = input("Enter the name(s) how you want them displayed: ")
+    name = input("Enter the agent name how you want them displayed: ")
     address = input("What is the address: ")
     contract_date = input("Enter the contract date: ")
     close_date = input("Enter the close date: ")
@@ -103,6 +108,9 @@ def main():
 
     seller_conditions = input("Enter any and all Seller Conditions/Contingencies with Deadlines seperated by semicolon (;) use the following"
                         "format EX. 'Closing Date 4/15/2025: This is the date on which the sale will be finalized, and the property will be transferred to the buyer. '\n Enter: ")
+
+    agent_emails = input("Enter any/all emails to receive notification reminders separated by semicolon (;), "
+                         "ex. john@email.com;doe@email.com : ")
 
     entries_w_dt = list()
 
@@ -126,8 +134,6 @@ def main():
             if "@" in entries:
                 entries_w_dt.append(entries)
 
-
-
     dates_dict = dict()
     for dates in entries_w_dt:
         date_tup = date_helper(dates)
@@ -136,8 +142,8 @@ def main():
     dates_dict['Contract Date'] = [contract_date]
     dates_dict['Close Date'] = [close_date]
     try:
-
-        create_google_cal_event(dates_dict)
+        create_google_cal_event(dates_dict, address)
     except RefreshError:
         scope_change()
-        create_google_cal_event(dates_dict)
+        create_google_cal_event(dates_dict, address, name, agent_emails)
+
