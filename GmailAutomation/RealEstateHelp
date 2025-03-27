@@ -26,22 +26,45 @@ def create_google_cal_event(data: dict):
 
     for key in data:
         date = datetime.strptime(data[key][0], "%m/%d/%Y").strftime("%Y-%m-%d")
-        if data[key][1] != None:
-            time = datetime.strptime(data[key][1], "%I:%M %p").strftime("%H:%M")
-        event = {
-            "summary": key,
-            "start":
-                {
-                    #"dateTime": '2025-03-26T05:00:00-07:00',
-                    "dateTime": f"{date}T05{time}",
+        if len(data[key]) > 1 and data[key][1] != None:
+            dt = "T".join(data[key])
+            dt_formatted = datetime.strptime(dt, "%m/%d/%YT%I:%M%p").strftime("%Y-%m-%dT%H:%M")
+
+            end_time = (datetime.strptime(dt_formatted, "%Y-%m-%dT%H:%M") + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M")
+            event = {
+                "summary": key,
+                "description": "",
+                "start":
+                    {
+                        #"dateTime": '2025-03-26T05:00:00-07:00',
+                        "dateTime": f"{dt_formatted}:00-05:00",
+                        "timeZone": "America/Chicago"
+                    },
+                "end": {
+                    "dateTime": f"{end_time}:00-05:00",
                     "timeZone": "America/Chicago"
-                },
-        }
+                    },
+            }
+        else:
+            event = {
+                "summary": key,
+                "description": "",
+                "start":
+                    {
+                        #"dateTime": '2025-03-26T05:00:00-07:00',
+                        "dateTime": f"{date}T08:00:00-05:00",
+                        "timeZone": "America/Chicago"
+                    },
+                "end": {
+                    "dateTime": f"{date}T08:30:00-05:00",
+                    "timeZone": "America/Chicago"
+                    },
+            }
 
-    service = build("calendar", "v3", credentials=creds)
+        service = build("calendar", "v3", credentials=creds)
 
-    event_create = service.events().insert(calendarId='primary', body=event).execute()
-    print(f"Created {event_create.get('htmlLink')}")
+        event_create = service.events().insert(calendarId='primary', body=event).execute()
+        print(f"Created {event_create.get('htmlLink')}")
     return
 
 def scope_change():
