@@ -1,3 +1,12 @@
+import os
+import re
+from datetime import datetime, timedelta
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from google.auth.exceptions import RefreshError
+
 def google_auth(SCOPES):
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
@@ -9,7 +18,7 @@ def google_auth(SCOPES):
     if not creds or not creds.valid:
 
         if creds and creds.expired and creds.refresh_token:
-            
+
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
@@ -21,8 +30,7 @@ def google_auth(SCOPES):
             token.write(creds.to_json())
     return creds
 
-def create_google_cal_event(data:dict, address:str, name:str, agent_email:str):
-
+def create_google_cal_event(data: dict, address: str, name: str, agent_email: str):
     scope = ['https://www.googleapis.com/auth/calendar']
     creds = google_auth(scope)
 
@@ -33,20 +41,21 @@ def create_google_cal_event(data:dict, address:str, name:str, agent_email:str):
             dt = "T".join(data[key])
             dt_formatted = datetime.strptime(dt, "%m/%d/%YT%I:%M%p").strftime("%Y-%m-%dT%H:%M")
 
-            end_time = (datetime.strptime(dt_formatted, "%Y-%m-%dT%H:%M") + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M")
+            end_time = (datetime.strptime(dt_formatted, "%Y-%m-%dT%H:%M") + timedelta(minutes=30)).strftime(
+                "%Y-%m-%dT%H:%M")
             event = {
                 "summary": f"{name} - {key}",
                 "description": address,
                 "start":
                     {
-                        #"dateTime": '2025-03-26T05:00:00-07:00',
+                        # "dateTime": '2025-03-26T05:00:00-07:00',
                         "dateTime": f"{dt_formatted}:00-05:00",
                         "timeZone": "America/Chicago"
                     },
                 "end": {
                     "dateTime": f"{end_time}:00-05:00",
                     "timeZone": "America/Chicago"
-                    },
+                },
                 'attendees': [
                     {'email': agent_email},
                 ],
@@ -57,12 +66,12 @@ def create_google_cal_event(data:dict, address:str, name:str, agent_email:str):
                 "description": address,
                 "start":
                     {
-                        #"dateTime": '2025-03-26T05:00:00-07:00',
+                        # "dateTime": '2025-03-26T05:00:00-07:00',
                         "date": f"{date}"
                     },
                 "end": {
                     "date": f"{date}"
-                    },
+                },
                 'attendees': [
                     {'email': agent_email},
                 ],
@@ -79,16 +88,15 @@ def scope_change():
         os.remove("token.json")
     return
 
-def date_grabber(data:str):
+def date_grabber(data: str):
     date_match = re.search(r"\d{1,2}/\d{1,2}/\d{4}", data)
     return date_match.group(0)
 
-def time_grabber(data:str):
+def time_grabber(data: str):
     time_match = re.search(r"@*\d{1,2}:\d{2}\s*?(AM|PM|am|pm|Am|Pm)?", data)
     return time_match.group(0).strip().lower()
 
-def date_helper(info:str):
-
+def date_helper(info: str):
     date = date_grabber(info)
     action = info.split("|")[0]
     if "@" in info:
@@ -97,42 +105,41 @@ def date_helper(info:str):
         time = None
     return action, [date, time]
 
-def main():
+def input_helper(input_cond:str):
+    if ";" in input_cond:
+        return input_cond.split(";")
+    else:
+        return [input_cond]
 
+def main():
     name = input("Enter the agent name how you want them displayed: ")
     address = input("What is the address: ")
     contract_date = input("Enter the contract date: ")
     close_date = input("Enter the close date: ")
-    buyer_conditions = input("Enter any and all Buyer Conditions/Contingencies with Deadlines seperated by semicolon (;) use the following"
-                        "format EX. 'Deposit/Escrow Deposit | Deadline Date: 3/22/2025 @8:06pm'\n Enter: ")
+    buyer_conditions = input(
+        "Enter any and all Buyer Conditions/Contingencies with Deadlines separated by semicolon (;) use the following"
+        "format EX. 'Deposit/Escrow Deposit | Deadline Date: 3/22/2025 @8:06pm'\n Enter: ")
 
-    seller_conditions = input("Enter any and all Seller Conditions/Contingencies with Deadlines seperated by semicolon (;) use the following"
-                        "format EX. 'Closing Date 4/15/2025: This is the date on which the sale will be finalized, and the property will be transferred to the buyer. '\n Enter: ")
+    seller_conditions = input(
+        "Enter any and all Seller Conditions/Contingencies with Deadlines separated by semicolon (;) use the following"
+        "format EX. 'Closing Date 4/15/2025: This is the date on which the sale will be finalized, "
+        "and the property will be transferred to the buyer. '\n Enter: ")
 
     agent_emails = input("Enter any/all emails to receive notification reminders separated by semicolon (;), "
                          "ex. john@email.com;doe@email.com : ")
 
+    buyer_cond = input_helper(buyer_conditions)
+    seller_cond = input_helper(seller_conditions)
+
     entries_w_dt = list()
 
-    if ";" in buyer_conditions:
-        buyer_splt = buyer_conditions.split(";")
-        buyer_cond = "\n".join(buyer_splt)
-    else:
-        buyer_cond = buyer_conditions
-
-    if ";" in seller_conditions:
-        seller_splt = seller_conditions.split(";")
-        seller_cond = "\n".join(seller_splt)
-    else:
-        seller_cond = seller_conditions
-
-    for entries in buyer_splt:
-        if "Deposit/Escrow Deposit" in entries:
-            depo_date = date_grabber(entries)
+    for entries in buyer_cond:
+        if "@" in entries:
             entries_w_dt.append(entries)
-        else:
-            if "@" in entries:
-                entries_w_dt.append(entries)
+
+    for entries in seller_cond:
+        if "@" in entries:
+            entries_w_dt.append(entries)
 
     dates_dict = dict()
     for dates in entries_w_dt:
@@ -142,8 +149,10 @@ def main():
     dates_dict['Contract Date'] = [contract_date]
     dates_dict['Close Date'] = [close_date]
     try:
-        create_google_cal_event(dates_dict, address)
+        create_google_cal_event(dates_dict, address, name, agent_emails)
     except RefreshError:
         scope_change()
         create_google_cal_event(dates_dict, address, name, agent_emails)
 
+if __name__ == "__main__":
+    main()
