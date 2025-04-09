@@ -12,9 +12,6 @@ from google.auth.exceptions import RefreshError
 
 app = Flask(__name__)
 
-class brittForm(Form):
-    name = StringField("Full Name", [validators.length(max=10)])
-
 def google_auth(SCOPES):
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
@@ -120,7 +117,6 @@ def create_google_cal_event(data: dict, address: str, name: str, agent_email: st
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    form = brittForm(request.form)
     return render_template("index.html")
 
 @app.route('/submit', methods=['POST'])
