@@ -55,6 +55,19 @@ def date_helper(info: str):
         time = None
     return action, [date, time]
 
+def attendees_helper(emails: str):
+    if ";" in emails.strip():
+        email_lst = emails.strip().split(";")
+    else:
+        email_lst = [emails]
+
+    attendees = []
+
+    for entry in email_lst:
+        attendees.append({'email': entry.strip()})
+
+    return attendees
+
 def create_google_cal_event(data: dict, address: str, name: str, agent_email: str):
     scope = ['https://www.googleapis.com/auth/calendar']
     creds = google_auth(scope)
@@ -84,9 +97,7 @@ def create_google_cal_event(data: dict, address: str, name: str, agent_email: st
                     "dateTime": f"{end_time}:00-05:00",
                     "timeZone": "America/Chicago"
                 },
-                'attendees': [
-                    {'email': agent_email},
-                ],
+                'attendees': attendees_helper(agent_email),
             }
         else:
             event = {
@@ -100,9 +111,7 @@ def create_google_cal_event(data: dict, address: str, name: str, agent_email: st
                 "end": {
                     "date": f"{date}"
                 },
-                'attendees': [
-                    {'email': agent_email},
-                ],
+                'attendees': attendees_helper(agent_email),
             }
 
         service = build("calendar", "v3", credentials=creds)
