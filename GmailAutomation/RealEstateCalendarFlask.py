@@ -159,13 +159,4 @@ def submit_form():
 
     return redirect(url_for("index"))
 
-#     return f"""
-#         <h1>Submitted!</h1>
-#         <p>Name: {name}</p>
-#         <p>Address: {address}</p>
-#         <p>Contract Date: {contract_date}</p>
-#         <p>Close Date: {close_date}</p>
-#         <p>Email: {email}</p>
-# """
-
 app.run()
