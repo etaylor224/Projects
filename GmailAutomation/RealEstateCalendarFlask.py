@@ -1,6 +1,4 @@
 from flask import Flask, request, render_template, redirect, url_for
-from wtforms import Form, StringField, validators
-from flask_wtf import FlaskForm
 import re
 import os
 from datetime import datetime, timedelta
