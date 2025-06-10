@@ -66,6 +66,7 @@ def attendees_helper(emails: str):
 
     return attendees
 
+
 def create_google_cal_event(data: dict, address: str, name: str, agent_email: str):
     scope = ['https://www.googleapis.com/auth/calendar']
     creds = google_auth(scope)
@@ -82,6 +83,7 @@ def create_google_cal_event(data: dict, address: str, name: str, agent_email: st
 
             end_time = (datetime.strptime(dt_formatted, "%Y-%m-%dT%H:%M") + timedelta(minutes=30)).strftime(
                 "%Y-%m-%dT%H:%M")
+
             event = {
                 "summary": f"{name} - {key}",
                 "description": address,
@@ -92,7 +94,7 @@ def create_google_cal_event(data: dict, address: str, name: str, agent_email: st
                         "timeZone": "America/Chicago"
                     },
                 "end": {
-                    "dateTime": f"{end_time}:00-05:00",
+                    "dateTime": f"{dt_formatted}:00-05:00",
                     "timeZone": "America/Chicago"
                 },
                 'attendees': attendees_helper(agent_email),
@@ -121,6 +123,11 @@ def create_google_cal_event(data: dict, address: str, name: str, agent_email: st
         #print(f"Created {event_create.get('htmlLink')}")
     return cal_links
 
+def scope_change():
+    if os.path.exists("token.json"):
+        os.remove("token.json")
+    return
+
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -141,11 +148,15 @@ def submit_form():
     entries_w_dt = list()
 
     for entries in buyer_conditions:
-        if "@" in entries:
+        if "@" in entries.strip():
+            entries_w_dt.append(entries)
+        elif "|" in entries.strip():
             entries_w_dt.append(entries)
 
     for entries in seller_conditions:
-        if "@" in entries:
+        if "@" in entries.strip():
+            entries_w_dt.append(entries)
+        elif "|" in entries.strip():
             entries_w_dt.append(entries)
 
     dates_dict = dict()
@@ -155,8 +166,13 @@ def submit_form():
 
     dates_dict['Contract Date'] = [contract_date]
     dates_dict['Close Date'] = [close_date]
-    cal_event = create_google_cal_event(dates_dict, address, name, email)
+    try:
+        create_google_cal_event(dates_dict, address, name, email)
+    except RefreshError:
+        scope_change()
+        create_google_cal_event(dates_dict, address, name, email)
 
     return redirect(url_for("index"))
 
-app.run()
+if __name__ == "__main__":
+    app.run()
