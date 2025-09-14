@@ -1,33 +1,6 @@
 import datetime
 import psycopg2 as pg
 
-_ranks_insert = """
-INSERT INTO ranks(
-id, belt_rank
-)
-VALUES(%s, %s)
-"""
-_division_insert = """
-INSERT INTO division(
-id, name)
-VALUES(%s, %s)
-"""
-_events_insert = """
-INSERT INTO events(
-id, name)
-VALUES(%s, %s)
-"""
-_schools_insert = """
-INSERT INTO schools(
-id, school)
-VALUES(%s, %s)
-"""
-_tournament_insert = """"
-INSERT INTO tournament(
-id, tournament, fname, lname, tourn_points, tourn_year)
-
-"""
-
 class TotalPoints:
     fname: str
     lname: str
